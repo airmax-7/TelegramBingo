@@ -197,7 +197,7 @@ export default function Lobby({ user }: LobbyProps) {
                       game.status !== 'waiting' || 
                       (game.participantCount >= game.maxPlayers) ||
                       joinGameMutation.isPending ||
-                      parseFloat(user?.balance || '0') < parseFloat(game.entryFee)
+                      parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee)
                     }
                     className="w-full"
                     variant={game.status === 'waiting' ? 'default' : 'secondary'}
