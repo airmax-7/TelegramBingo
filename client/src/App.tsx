@@ -75,12 +75,18 @@ function Router({ user, onShowWallet }: { user: any; onShowWallet: () => void })
 }
 
 function App() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(() => {
+    // Try to restore user from localStorage
+    const saved = localStorage.getItem('telegram-bingo-user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [showWalletModal, setShowWalletModal] = useState(false);
   const { isReady } = useTelegram();
 
   const handleAuthenticated = (authenticatedUser: any) => {
     setUser(authenticatedUser);
+    // Save user to localStorage
+    localStorage.setItem('telegram-bingo-user', JSON.stringify(authenticatedUser));
   };
 
   const refreshUser = async () => {
