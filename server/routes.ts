@@ -101,6 +101,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test payment completion endpoint (for demo purposes)
+  app.post("/api/complete-test-payment", async (req, res) => {
+    try {
+      const { paymentIntentId, userId } = req.body;
+      
+      if (!paymentIntentId || !userId) {
+        return res.status(400).json({ message: "Missing paymentIntentId or userId" });
+      }
+
+      // Get the pending transaction
+      const transactions = await storage.getUserTransactions(userId);
+      const pendingTransaction = transactions.find(t => 
+        t.stripePaymentIntentId === paymentIntentId && t.status === 'pending'
+      );
+      
+      if (!pendingTransaction) {
+        return res.status(404).json({ message: "Pending transaction not found" });
+      }
+
+      // Update user balance
+      const user = await storage.getUser(userId);
+      if (user) {
+        const depositAmount = parseFloat(pendingTransaction.amount);
+        const newBalance = (parseFloat(user.balance) + depositAmount).toString();
+        await storage.updateUserBalance(userId, newBalance);
+
+        // Update transaction status
+        await storage.updateTransactionStatus(pendingTransaction.id, 'completed');
+        
+        res.json({ 
+          success: true, 
+          newBalance,
+          message: "Test payment completed successfully"
+        });
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: "Test payment error: " + error.message });
+    }
+  });
+
   // Stripe webhook for payment completion
   app.post("/api/stripe/webhook", async (req, res) => {
     try {

@@ -104,6 +104,47 @@ const DepositForm = ({ user, amount, onSuccess, onCancel }: DepositFormProps) =>
           )}
         </Button>
       </div>
+      
+      {/* Test mode payment completion for demo */}
+      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-700 mb-2">Demo Mode: For testing, click below to simulate successful payment:</p>
+        <Button
+          type="button"
+          onClick={async () => {
+            try {
+              const paymentIntentId = window.location.search.includes('payment_intent=') 
+                ? new URLSearchParams(window.location.search).get('payment_intent')
+                : `pi_test_${Date.now()}`;
+              
+              const response = await apiRequest('POST', '/api/complete-test-payment', {
+                paymentIntentId,
+                userId: user.id
+              });
+              
+              const data = await response.json();
+              
+              if (data.success) {
+                toast({
+                  title: "Payment Successful",
+                  description: `$${amount.toFixed(2)} added to your wallet!`,
+                });
+                onSuccess();
+              }
+            } catch (error) {
+              toast({
+                title: "Error",
+                description: "Failed to complete test payment",
+                variant: "destructive",
+              });
+            }
+          }}
+          variant="outline"
+          className="w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800"
+          disabled={isLoading}
+        >
+          Complete Test Payment
+        </Button>
+      </div>
     </form>
   );
 };
