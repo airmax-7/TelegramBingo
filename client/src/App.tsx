@@ -95,7 +95,9 @@ function App() {
         const response = await fetch(`/api/user/${user.id}`);
         if (response.ok) {
           const data = await response.json();
-          setUser(data.user);
+          const updatedUser = data.user;
+          setUser(updatedUser);
+          localStorage.setItem('telegram-bingo-user', JSON.stringify(updatedUser));
         }
       } catch (error) {
         console.error('Failed to refresh user data:', error);

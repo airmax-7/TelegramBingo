@@ -25,6 +25,11 @@ export default function Lobby({ user }: LobbyProps) {
   const { data: userData, refetch: refetchUser } = useQuery({
     queryKey: ['/api/user', user?.id],
     enabled: !!user?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/user/${user.id}`);
+      if (!response.ok) throw new Error('Failed to fetch user data');
+      return response.json();
+    },
   });
 
   const createGameMutation = useMutation({
