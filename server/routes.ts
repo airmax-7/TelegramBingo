@@ -104,20 +104,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test payment completion endpoint (for demo purposes)
   app.post("/api/complete-test-payment", async (req, res) => {
     try {
-      const { paymentIntentId, userId } = req.body;
+      const { userId, amount } = req.body;
       
-      if (!paymentIntentId || !userId) {
-        return res.status(400).json({ message: "Missing paymentIntentId or userId" });
+      if (!userId) {
+        return res.status(400).json({ message: "Missing userId" });
       }
 
-      // Get the pending transaction
+      // Get the most recent pending transaction for this user
       const transactions = await storage.getUserTransactions(userId);
-      const pendingTransaction = transactions.find(t => 
-        t.stripePaymentIntentId === paymentIntentId && t.status === 'pending'
-      );
+      const pendingTransaction = transactions.find(t => t.status === 'pending' && t.type === 'deposit');
       
       if (!pendingTransaction) {
-        return res.status(404).json({ message: "Pending transaction not found" });
+        return res.status(404).json({ message: "No pending deposit transaction found" });
       }
 
       // Update user balance

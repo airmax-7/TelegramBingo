@@ -112,13 +112,9 @@ const DepositForm = ({ user, amount, onSuccess, onCancel }: DepositFormProps) =>
           type="button"
           onClick={async () => {
             try {
-              const paymentIntentId = window.location.search.includes('payment_intent=') 
-                ? new URLSearchParams(window.location.search).get('payment_intent')
-                : `pi_test_${Date.now()}`;
-              
               const response = await apiRequest('POST', '/api/complete-test-payment', {
-                paymentIntentId,
-                userId: user.id
+                userId: user.id,
+                amount
               });
               
               const data = await response.json();
