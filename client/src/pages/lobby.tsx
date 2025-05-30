@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Trophy, Plus, Play } from 'lucide-react';
+import { Users, Trophy, Plus, Play, RefreshCw } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,11 @@ export default function Lobby({ user }: LobbyProps) {
   const { data: gamesData, isLoading } = useQuery({
     queryKey: ['/api/games'],
     refetchInterval: 3000, // Refresh every 3 seconds
+  });
+
+  const { data: userData, refetch: refetchUser } = useQuery({
+    queryKey: ['/api/user', user?.id],
+    enabled: !!user?.id,
   });
 
   const createGameMutation = useMutation({
@@ -116,11 +121,21 @@ export default function Lobby({ user }: LobbyProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-90">Your Balance</p>
-                <p className="text-xl font-bold">${parseFloat(user?.balance || '0').toFixed(2)}</p>
+                <p className="text-xl font-bold">${parseFloat(userData?.user?.balance || user?.balance || '0').toFixed(2)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm opacity-90">Entry Fee</p>
-                <p className="font-bold">$2.50</p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => refetchUser()}
+                  className="text-white hover:bg-white/20 p-1"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <div className="text-right">
+                  <p className="text-sm opacity-90">Entry Fee</p>
+                  <p className="font-bold">$2.50</p>
+                </div>
               </div>
             </div>
           </CardContent>

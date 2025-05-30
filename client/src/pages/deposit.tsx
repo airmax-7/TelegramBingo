@@ -200,7 +200,8 @@ export default function Deposit({ user }: DepositProps) {
   };
 
   const handlePaymentSuccess = () => {
-    navigate('/lobby');
+    // Force a page reload to refresh user balance
+    window.location.href = '/lobby';
   };
 
   const handleCancel = () => {

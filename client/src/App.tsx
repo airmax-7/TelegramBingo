@@ -83,6 +83,20 @@ function App() {
     setUser(authenticatedUser);
   };
 
+  const refreshUser = async () => {
+    if (user?.id) {
+      try {
+        const response = await fetch(`/api/user/${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+      }
+    }
+  };
+
   const handleDeposit = (amount: number) => {
     setShowWalletModal(false);
     // Navigate to deposit page
