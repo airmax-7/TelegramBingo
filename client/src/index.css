@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 207 90% 54%; /* Telegram blue */
+  --primary-foreground: 211 100% 99%;
+  --secondary: 60 4.8% 95.9%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+  
+  /* Custom Bingo colors */
+  --telegram: 207 90% 54%; /* #0088cc */
+  --game-green: 145 85% 51%; /* #10B981 */
+  --game-orange: 38 92% 50%; /* #F59E0B */
+  --game-red: 0 84% 60%; /* #DC2626 */
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Telegram Web App styling */
+  html {
+    background-color: var(--tg-theme-bg-color, #f5f5f5);
+  }
+
+  body {
+    background-color: var(--tg-theme-bg-color, #f5f5f5);
+    color: var(--tg-theme-text-color, #000000);
+  }
+}
+
+@layer components {
+  /* Custom Bingo card grid styling */
+  .bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.25rem;
+  }
+
+  .bingo-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .bingo-cell:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
+
+  .bingo-cell:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  /* Custom scrollbar for better mobile experience */
+  .custom-scrollbar::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+}
+
+@layer utilities {
+  /* Telegram-specific utilities */
+  .telegram-bg {
+    background-color: var(--tg-theme-bg-color, #f5f5f5);
+  }
+
+  .telegram-text {
+    color: var(--tg-theme-text-color, #000000);
+  }
+
+  .telegram-secondary-bg {
+    background-color: var(--tg-theme-secondary-bg-color, #ffffff);
+  }
+
+  .telegram-button {
+    background-color: var(--tg-theme-button-color, #0088cc);
+    color: var(--tg-theme-button-text-color, #ffffff);
+  }
+
+  /* Animation utilities */
+  .animate-pulse-fast {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounce-subtle 2s infinite;
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* Safe area utilities for mobile */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}

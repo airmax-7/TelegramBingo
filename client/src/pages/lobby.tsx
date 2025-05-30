@@ -1,0 +1,220 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Users, Trophy, Plus, Play } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
+
+interface LobbyProps {
+  user: any;
+}
+
+export default function Lobby({ user }: LobbyProps) {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: gamesData, isLoading } = useQuery({
+    queryKey: ['/api/games'],
+    refetchInterval: 3000, // Refresh every 3 seconds
+  });
+
+  const createGameMutation = useMutation({
+    mutationFn: async (gameData: any) => {
+      const response = await apiRequest('POST', '/api/games', gameData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+      toast({
+        title: "Game Created",
+        description: "Your game has been created successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const joinGameMutation = useMutation({
+    mutationFn: async ({ gameId }: { gameId: number }) => {
+      const response = await apiRequest('POST', `/api/games/${gameId}/join`, {
+        userId: user.id
+      });
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      navigate(`/game/${variables.gameId}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateGame = () => {
+    createGameMutation.mutate({
+      status: 'waiting',
+      entryFee: '2.50',
+      prizePool: '0.00',
+      maxPlayers: 8
+    });
+  };
+
+  const handleJoinGame = (gameId: number) => {
+    joinGameMutation.mutate({ gameId });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'waiting':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-md mx-auto">
+          <div className="text-center py-8">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
+            <p className="mt-2 text-gray-600">Loading games...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 pb-20">
+      <div className="max-w-md mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Game Lobby</h1>
+          <p className="text-gray-600">Join an active game or create a new one</p>
+        </div>
+
+        {/* Balance Card */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Your Balance</p>
+                <p className="text-xl font-bold">${parseFloat(user?.balance || '0').toFixed(2)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm opacity-90">Entry Fee</p>
+                <p className="font-bold">$2.50</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Create Game Button */}
+        <Button 
+          onClick={handleCreateGame}
+          disabled={createGameMutation.isPending}
+          className="w-full mb-6 bg-green-500 hover:bg-green-600 py-3"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create New Game
+        </Button>
+
+        {/* Active Games */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">Available Games</h2>
+          
+          {gamesData?.games?.length > 0 ? (
+            gamesData.games.map((game: any) => (
+              <Card key={game.id} className="border border-gray-200 hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-gray-900">Game #{game.id}</h3>
+                      <Badge className={getStatusColor(game.status)}>
+                        {game.status}
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-1 text-orange-500">
+                        <Trophy className="h-4 w-4" />
+                        <span className="font-bold">${parseFloat(game.prizePool).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm">
+                        {game.participantCount || 0}/{game.maxPlayers} players
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      Entry: ${parseFloat(game.entryFee).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <Button
+                    onClick={() => handleJoinGame(game.id)}
+                    disabled={
+                      game.status !== 'waiting' || 
+                      (game.participantCount >= game.maxPlayers) ||
+                      joinGameMutation.isPending ||
+                      parseFloat(user?.balance || '0') < parseFloat(game.entryFee)
+                    }
+                    className="w-full"
+                    variant={game.status === 'waiting' ? 'default' : 'secondary'}
+                  >
+                    {game.status === 'waiting' ? (
+                      <>
+                        <Play className="mr-2 h-4 w-4" />
+                        Join Game
+                      </>
+                    ) : (
+                      'Game Started'
+                    )}
+                  </Button>
+
+                  {parseFloat(user?.balance || '0') < parseFloat(game.entryFee) && (
+                    <p className="text-xs text-red-500 mt-2 text-center">
+                      Insufficient balance
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Games</h3>
+                <p className="text-gray-600 mb-4">Be the first to create a new game!</p>
+                <Button onClick={handleCreateGame} className="bg-blue-500 hover:bg-blue-600">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Game
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
