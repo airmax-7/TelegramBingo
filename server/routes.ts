@@ -322,6 +322,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to simulate a second player joining (for testing multiplayer)
+  app.post("/api/test/add-player", async (req, res) => {
+    try {
+      const { gameId } = req.body;
+      
+      // Create a test user with sufficient balance
+      const testUser = await storage.createUser({
+        telegramId: `test-${Date.now()}`,
+        firstName: "Test",
+        lastName: "Player",
+        username: `testplayer${Date.now()}`,
+        phoneNumber: "+1234567890",
+        balance: "10.00",
+        isVerified: true
+      });
+
+      const game = await storage.getGame(gameId);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+
+      // Deduct entry fee
+      const newBalance = (parseFloat(testUser.balance) - parseFloat(game.entryFee)).toString();
+      await storage.updateUserBalance(testUser.id, newBalance);
+
+      // Generate bingo card
+      const bingoCard = generateBingoCard();
+
+      // Join game
+      const participant = await storage.joinGame({
+        gameId,
+        userId: testUser.id,
+        bingoCard,
+        markedNumbers: []
+      });
+
+      // Check if game should start
+      const participants = await storage.getGameParticipants(gameId);
+      if (participants.length >= 2) {
+        await storage.updateGameStatus(gameId, 'active');
+        
+        // Broadcast game start
+        const room = gameRooms.get(gameId);
+        if (room) {
+          broadcastToRoom(room, {
+            type: 'game_started',
+            gameId
+          });
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        testUser: { id: testUser.id, username: testUser.username },
+        participant,
+        playersCount: participants.length
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error adding test player: " + error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup

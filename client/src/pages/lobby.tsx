@@ -14,6 +14,7 @@ interface LobbyProps {
 
 export default function Lobby({ user }: LobbyProps) {
   const [, navigate] = useLocation();
+  const [joiningGameId, setJoiningGameId] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -55,15 +56,18 @@ export default function Lobby({ user }: LobbyProps) {
 
   const joinGameMutation = useMutation({
     mutationFn: async ({ gameId }: { gameId: number }) => {
+      setJoiningGameId(gameId);
       const response = await apiRequest('POST', `/api/games/${gameId}/join`, {
         userId: user.id
       });
       return response.json();
     },
     onSuccess: (data, variables) => {
+      setJoiningGameId(null);
       navigate(`/game/${variables.gameId}`);
     },
     onError: (error: any) => {
+      setJoiningGameId(null);
       toast({
         title: "Error",
         description: error.message,
@@ -83,6 +87,31 @@ export default function Lobby({ user }: LobbyProps) {
 
   const handleJoinGame = (gameId: number) => {
     joinGameMutation.mutate({ gameId });
+  };
+
+  const addTestPlayerMutation = useMutation({
+    mutationFn: async (gameId: number) => {
+      const response = await apiRequest('POST', '/api/test/add-player', { gameId });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Test Player Added",
+        description: "A test player joined the game. The game should start now!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/games'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleAddTestPlayer = (gameId: number) => {
+    addTestPlayerMutation.mutate(gameId);
   };
 
   const getStatusColor = (status: string) => {
@@ -196,13 +225,15 @@ export default function Lobby({ user }: LobbyProps) {
                     disabled={
                       game.status !== 'waiting' || 
                       (game.participantCount >= game.maxPlayers) ||
-                      joinGameMutation.isPending ||
+                      joiningGameId === game.id ||
                       parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee)
                     }
                     className="w-full"
                     variant={game.status === 'waiting' ? 'default' : 'secondary'}
                   >
-                    {game.status === 'waiting' ? (
+                    {joiningGameId === game.id ? (
+                      'Joining...'
+                    ) : game.status === 'waiting' ? (
                       <>
                         <Play className="mr-2 h-4 w-4" />
                         Join Game
@@ -216,6 +247,19 @@ export default function Lobby({ user }: LobbyProps) {
                     <p className="text-xs text-red-500 mt-2 text-center">
                       Insufficient balance
                     </p>
+                  )}
+                  
+                  {/* Test button to add second player (for testing multiplayer) */}
+                  {game.status === 'waiting' && game.participantCount >= 1 && (
+                    <Button
+                      onClick={() => handleAddTestPlayer(game.id)}
+                      disabled={addTestPlayerMutation.isPending}
+                      className="w-full mt-2"
+                      variant="outline"
+                      size="sm"
+                    >
+                      {addTestPlayerMutation.isPending ? 'Adding Player...' : 'Add Test Player & Start Game'}
+                    </Button>
                   )}
                 </CardContent>
               </Card>
