@@ -249,7 +249,7 @@ export default function Lobby({ user }: LobbyProps) {
                     )}
                   </Button>
 
-                  {parseFloat(user?.balance || '0') < parseFloat(game.entryFee) && (
+                  {parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee) && (
                     <p className="text-xs text-red-500 mt-2 text-center">
                       Insufficient balance
                     </p>
