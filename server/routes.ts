@@ -266,6 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update prize pool
       const newPrizePool = (parseFloat(game.prizePool) + parseFloat(game.entryFee)).toString();
+      await storage.updateGamePrizePool(gameId, newPrizePool);
       
       // Start game if enough players
       const updatedParticipants = await storage.getGameParticipants(gameId);

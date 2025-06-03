@@ -21,6 +21,7 @@ export interface IStorage {
   getActiveGames(): Promise<Game[]>;
   updateGameStatus(gameId: number, status: string): Promise<Game>;
   updateGameCurrentNumber(gameId: number, number: string, calledNumbers: string[]): Promise<Game>;
+  updateGamePrizePool(gameId: number, prizePool: string): Promise<Game>;
   setGameWinner(gameId: number, winnerId: number): Promise<Game>;
 
   // Game participant operations
@@ -115,6 +116,15 @@ export class DatabaseStorage implements IStorage {
         currentNumber: number,
         calledNumbers: calledNumbers
       })
+      .where(eq(games.id, gameId))
+      .returning();
+    return game;
+  }
+
+  async updateGamePrizePool(gameId: number, prizePool: string): Promise<Game> {
+    const [game] = await db
+      .update(games)
+      .set({ prizePool })
       .where(eq(games.id, gameId))
       .returning();
     return game;
