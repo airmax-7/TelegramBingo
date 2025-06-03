@@ -281,9 +281,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'game_started',
             gameId
           });
-          
-          // Start automatic number calling
-          startNumberCalling(gameId, room);
         }
       }
 
