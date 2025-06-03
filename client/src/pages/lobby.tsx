@@ -221,15 +221,22 @@ export default function Lobby({ user }: LobbyProps) {
                   </div>
 
                   <Button
-                    onClick={() => handleJoinGame(game.id)}
+                    onClick={() => {
+                      if (game.status === 'active') {
+                        navigate(`/game/${game.id}`);
+                      } else {
+                        handleJoinGame(game.id);
+                      }
+                    }}
                     disabled={
-                      game.status !== 'waiting' || 
-                      (game.participantCount >= game.maxPlayers) ||
                       joiningGameId === game.id ||
-                      parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee)
+                      (game.status === 'waiting' && (
+                        (game.participantCount >= game.maxPlayers) ||
+                        parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee)
+                      ))
                     }
                     className="w-full"
-                    variant={game.status === 'waiting' ? 'default' : 'secondary'}
+                    variant={game.status === 'waiting' ? 'default' : 'default'}
                   >
                     {joiningGameId === game.id ? (
                       'Joining...'
@@ -238,8 +245,13 @@ export default function Lobby({ user }: LobbyProps) {
                         <Play className="mr-2 h-4 w-4" />
                         Join Game
                       </>
+                    ) : game.status === 'active' ? (
+                      <>
+                        <Play className="mr-2 h-4 w-4" />
+                        Enter Game
+                      </>
                     ) : (
-                      'Game Started'
+                      'Game Completed'
                     )}
                   </Button>
 

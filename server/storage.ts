@@ -5,7 +5,7 @@ import {
   type Transaction, type InsertTransaction
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -88,7 +88,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(games)
-      .where(eq(games.status, 'waiting'))
+      .where(sql`${games.status} IN ('waiting', 'active')`)
       .orderBy(desc(games.createdAt));
   }
 
