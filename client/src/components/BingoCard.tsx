@@ -66,12 +66,12 @@ export default function BingoCard({
     <Card className="shadow-lg border border-gray-200">
       <CardContent className="p-4">
         <div className="mb-3">
-          <h2 className="text-lg font-bold text-center text-gray-900">YOUR CARD</h2>
-          <div className="flex justify-center space-x-4 mt-2">
+          <h2 className="text-lg font-bold text-center text-gray-900 mb-2">YOUR CARD</h2>
+          <div className="grid grid-cols-5 gap-1 mb-2">
             {letters.map(letter => (
-              <span key={letter} className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">
+              <div key={letter} className="w-12 h-8 flex items-center justify-center text-lg font-bold text-blue-600 bg-blue-50 rounded border border-blue-200">
                 {letter}
-              </span>
+              </div>
             ))}
           </div>
         </div>
