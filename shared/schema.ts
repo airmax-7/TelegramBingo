@@ -18,6 +18,7 @@ export const users = pgTable("users", {
 export const games = pgTable("games", {
   id: serial("id").primaryKey(),
   status: text("status").notNull(), // 'waiting', 'active', 'completed'
+  gameType: text("game_type").default("standard").notNull(), // 'standard', 'speed', 'jackpot'
   currentNumber: text("current_number"),
   calledNumbers: jsonb("called_numbers").default([]).notNull(),
   entryFee: decimal("entry_fee", { precision: 10, scale: 2 }).notNull(),

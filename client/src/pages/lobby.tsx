@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import CreateGameModal from '@/components/CreateGameModal';
 
 interface LobbyProps {
   user: any;
@@ -175,15 +176,8 @@ export default function Lobby({ user }: LobbyProps) {
           </CardContent>
         </Card>
 
-        {/* Create Game Button */}
-        <Button 
-          onClick={handleCreateGame}
-          disabled={createGameMutation.isPending}
-          className="w-full mb-6 bg-green-500 hover:bg-green-600 py-3"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Game
-        </Button>
+        {/* Create Game Modal */}
+        <CreateGameModal user={user} />
 
         {/* Active Games */}
         <div className="space-y-4">
