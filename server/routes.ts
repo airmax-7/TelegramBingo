@@ -17,6 +17,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 interface GameRoom {
   gameId: number;
   players: Set<WebSocket>;
+  numberCallInterval?: NodeJS.Timeout;
 }
 
 const gameRooms = new Map<number, GameRoom>();
@@ -280,6 +281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'game_started',
             gameId
           });
+          
+          // Start automatic number calling
+          startNumberCalling(gameId, room);
         }
       }
 
@@ -496,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const availableNumbers = [];
         for (let i = 1; i <= 75; i++) {
           const letter = i <= 15 ? 'B' : i <= 30 ? 'I' : i <= 45 ? 'N' : i <= 60 ? 'G' : 'O';
-          const numberStr = `${letter}-${i}`;
+          const numberStr = `${letter}${i}`;
           if (!calledNumbers.includes(numberStr)) {
             availableNumbers.push(numberStr);
           }

@@ -95,6 +95,23 @@ export default function BingoCard({
           )}
         </div>
 
+        {/* Called Numbers Section */}
+        {calledNumbers.length > 0 && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Called Numbers</h3>
+            <div className="flex flex-wrap gap-1">
+              {calledNumbers.map(number => (
+                <span 
+                  key={number}
+                  className="inline-block w-8 h-8 text-xs font-bold bg-blue-100 text-blue-800 rounded flex items-center justify-center border border-blue-200"
+                >
+                  {number}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           <Button 
             onClick={onCallBingo}
