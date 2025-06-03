@@ -154,23 +154,23 @@ export default function Lobby({ user }: LobbyProps) {
         <Card className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Your Balance</p>
-                <p className="text-xl font-bold">${parseFloat(userData?.user?.balance || user?.balance || '0').toFixed(2)}</p>
-              </div>
               <div className="flex items-center space-x-2">
+                <div>
+                  <p className="text-sm opacity-90">Your Balance</p>
+                  <p className="text-xl font-bold">${parseFloat(userData?.user?.balance || user?.balance || '0').toFixed(2)}</p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => refetchUser()}
-                  className="text-white hover:bg-white/20 p-1"
+                  className="text-white hover:bg-white/20 p-1 h-8 w-8"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
-                <div className="text-right">
-                  <p className="text-sm opacity-90">Available Games</p>
-                  <p className="font-bold">{gamesData?.games?.length || 0}</p>
-                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm opacity-90">Available Games</p>
+                <p className="font-bold">{gamesData?.games?.length || 0}</p>
               </div>
             </div>
           </CardContent>
