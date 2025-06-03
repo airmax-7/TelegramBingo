@@ -168,8 +168,8 @@ export default function Lobby({ user }: LobbyProps) {
                   <RefreshCw className="h-4 w-4" />
                 </Button>
                 <div className="text-right">
-                  <p className="text-sm opacity-90">Entry Fee</p>
-                  <p className="font-bold">$2.50</p>
+                  <p className="text-sm opacity-90">Available Games</p>
+                  <p className="font-bold">{gamesData?.games?.length || 0}</p>
                 </div>
               </div>
             </div>
