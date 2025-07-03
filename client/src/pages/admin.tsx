@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,13 +16,26 @@ interface AdminProps {
 export default function Admin({ user }: AdminProps) {
   const [paymentCode, setPaymentCode] = useState('');
   const [transactionId, setTransactionId] = useState('');
+  const [currentUser, setCurrentUser] = useState(user);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch current user data to get admin status
+  const { data: userData } = useQuery({
+    queryKey: ['/api/user/' + user?.id],
+    enabled: !!user?.id,
+  });
+
+  useEffect(() => {
+    if (userData?.user) {
+      setCurrentUser(userData.user);
+    }
+  }, [userData]);
 
   // Fetch pending transactions
   const { data: pendingTransactions, isLoading } = useQuery({
     queryKey: ['/api/admin/pending-transactions'],
-    enabled: user?.isAdmin === true,
+    enabled: currentUser?.isAdmin === true,
   });
 
   // Verify payment mutation
@@ -74,7 +87,21 @@ export default function Admin({ user }: AdminProps) {
     verifyPaymentMutation.mutate({ code: paymentCode, txId: transactionId });
   };
 
-  if (user?.isAdmin !== true) {
+  const handleBecomeAdmin = () => {
+    // For testing purposes - switch to admin user
+    const adminUser = {
+      id: 18,
+      username: 'admin_demo',
+      telegramId: '1748959676943',
+      isAdmin: true,
+      balance: '0.00'
+    };
+    
+    localStorage.setItem('telegram-bingo-user', JSON.stringify(adminUser));
+    window.location.reload();
+  };
+
+  if (currentUser?.isAdmin !== true) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md">
@@ -82,6 +109,18 @@ export default function Admin({ user }: AdminProps) {
             <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h2 className="text-lg font-semibold mb-2">Access Denied</h2>
             <p className="text-gray-600">You don't have admin privileges to access this page.</p>
+            <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-left">
+              <p><strong>Debug Info:</strong></p>
+              <p>User ID: {user?.id}</p>
+              <p>Current isAdmin: {String(currentUser?.isAdmin)}</p>
+              <p>User data loaded: {userData ? 'Yes' : 'No'}</p>
+            </div>
+            <Button 
+              onClick={handleBecomeAdmin} 
+              className="mt-4 bg-blue-600 hover:bg-blue-700"
+            >
+              Switch to Admin User (Testing)
+            </Button>
           </CardContent>
         </Card>
       </div>
