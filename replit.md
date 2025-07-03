@@ -95,11 +95,36 @@ The application uses PostgreSQL with the following main entities:
 - Stripe integration requires both public and secret keys
 - Telegram Web App integration for production deployment
 
+## Admin Payment Verification
+
+### How Admins Verify Offline Payments
+
+The application includes an admin panel for verifying offline payments made by users. Here's how the system works:
+
+#### For Users:
+1. User initiates a deposit and receives a unique 6-digit payment code
+2. User makes offline payment (bank transfer, mobile money, etc.) using the payment code as reference
+3. User provides admin with both the payment code and transaction ID
+
+#### For Admins:
+1. Access admin panel at `/admin` (requires admin privileges)
+2. View all pending transactions with their payment codes
+3. Enter payment code and transaction ID provided by user
+4. Click "Verify Payment" to approve the transaction
+5. User's balance is automatically updated upon verification
+
+#### Admin Access:
+- Set `is_admin = TRUE` in the users table for admin accounts
+- Current admin user ID: 18 (demo_user)
+
 ## Changelog
 
 ```
 Changelog:
-- July 03, 2025. Initial setup
+- July 03, 2025: Initial setup
+- July 03, 2025: Removed Stripe integration, implemented offline payment system
+- July 03, 2025: Added admin panel for payment verification
+- July 03, 2025: Updated all currency displays to ETB (Ethiopian Birr)
 ```
 
 ## User Preferences

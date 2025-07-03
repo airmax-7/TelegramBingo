@@ -33,6 +33,10 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
   updateTransactionStatus(transactionId: number, status: string): Promise<Transaction>;
+  
+  // Admin operations
+  getPendingTransactions(): Promise<Transaction[]>;
+  verifyPaymentByCode(paymentCode: string, transactionId: number): Promise<Transaction>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -187,6 +191,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactions.id, transactionId))
       .returning();
     return transaction;
+  }
+
+  async getPendingTransactions(): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.status, 'pending'))
+      .orderBy(transactions.createdAt);
+  }
+
+  async verifyPaymentByCode(paymentCode: string, transactionId: number): Promise<Transaction> {
+    // First, find the transaction with the matching code and ID
+    const [transaction] = await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.paymentCode, paymentCode),
+          eq(transactions.status, 'pending')
+        )
+      );
+
+    if (!transaction) {
+      throw new Error('Transaction not found or already verified');
+    }
+
+    // Update transaction status to completed
+    const [updatedTransaction] = await db
+      .update(transactions)
+      .set({ status: 'completed' })
+      .where(eq(transactions.id, transactionId))
+      .returning();
+
+    // Update user balance
+    await this.updateUserBalance(transaction.userId, transaction.amount);
+
+    return updatedTransaction;
   }
 }
 

@@ -10,6 +10,7 @@ import WalletModal from "@/components/WalletModal";
 import Lobby from "@/pages/lobby";
 import Game from "@/pages/game";
 import Deposit from "@/pages/deposit";
+import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import { Button } from "@/components/ui/button";
 import { Wallet, Users, History, User, Gamepad2 } from "lucide-react";
@@ -25,6 +26,7 @@ function Router({ user, onShowWallet }: { user: any; onShowWallet: () => void })
         <Route path="/lobby" component={() => <Lobby user={user} />} />
         <Route path="/game/:id" component={() => <Game user={user} />} />
         <Route path="/deposit" component={() => <Deposit user={user} />} />
+        <Route path="/admin" component={() => <Admin user={user} />} />
         <Route component={NotFound} />
       </Switch>
 

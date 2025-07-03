@@ -422,6 +422,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes
+  app.get("/api/admin/pending-transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getPendingTransactions();
+      res.json({ transactions });
+    } catch (error: any) {
+      console.error("Error fetching pending transactions:", error);
+      res.status(500).json({ message: "Failed to fetch pending transactions" });
+    }
+  });
+
+  app.post("/api/admin/verify-payment", async (req, res) => {
+    try {
+      const { paymentCode, transactionId } = req.body;
+      
+      if (!paymentCode || !transactionId) {
+        return res.status(400).json({ message: "Payment code and transaction ID are required" });
+      }
+
+      const transaction = await storage.verifyPaymentByCode(paymentCode, transactionId);
+      res.json({ 
+        message: "Payment verified successfully",
+        transaction 
+      });
+    } catch (error: any) {
+      console.error("Error verifying payment:", error);
+      res.status(400).json({ message: error.message || "Failed to verify payment" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket setup
