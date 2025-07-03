@@ -22,6 +22,12 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
     enabled: isOpen && !!user?.id,
   });
 
+  // Fetch fresh user data to get current balance
+  const { data: userData } = useQuery({
+    queryKey: ['/api/user/' + user?.id],
+    enabled: isOpen && !!user?.id,
+  });
+
   const handleDeposit = () => {
     const amount = parseFloat(depositAmount);
     if (amount > 0) {
@@ -112,7 +118,7 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white mb-4">
             <CardContent className="p-4">
               <p className="text-sm opacity-90">Current Balance</p>
-              <p className="text-2xl font-bold">{parseFloat(user?.balance || '0').toFixed(2)} ETB</p>
+              <p className="text-2xl font-bold">{parseFloat(userData?.user?.balance || user?.balance || '0').toFixed(2)} ETB</p>
               <div className="flex items-center space-x-4 mt-3">
                 <div className="text-center">
                   <p className="text-xs opacity-90">Total Deposited</p>
