@@ -1,18 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import Stripe from "stripe";
 import { storage } from "./storage";
 import { insertUserSchema, insertGameSchema, insertTransactionSchema } from "@shared/schema";
 import { generateBingoCard, checkWinCondition } from "../client/src/lib/gameLogic";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+// Generate 6-digit payment code
+function generatePaymentCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-06-20",
-});
 
 interface GameRoom {
   gameId: number;
@@ -69,8 +65,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create payment intent for deposit
-  app.post("/api/create-payment-intent", async (req, res) => {
+  // Create offline payment code for deposit
+  app.post("/api/create-payment-code", async (req, res) => {
     try {
       const { amount, userId } = req.body;
       
@@ -78,27 +74,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing amount or userId" });
       }
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd",
-        metadata: {
-          userId: userId.toString(),
-          type: 'deposit'
-        }
-      });
+      const paymentCode = generatePaymentCode();
 
-      // Create pending transaction
-      await storage.createTransaction({
+      // Create pending transaction with payment code
+      const transaction = await storage.createTransaction({
         userId,
         type: 'deposit',
         amount: amount.toString(),
         status: 'pending',
-        stripePaymentIntentId: paymentIntent.id
+        paymentCode
       });
 
-      res.json({ clientSecret: paymentIntent.client_secret });
+      res.json({ 
+        paymentCode,
+        transactionId: transaction.id,
+        amount: amount.toString(),
+        currency: 'ETB',
+        instructions: 'Please make your payment offline and provide this 6-digit code as reference.'
+      });
     } catch (error: any) {
-      res.status(500).json({ message: "Error creating payment intent: " + error.message });
+      res.status(500).json({ message: "Error creating payment code: " + error.message });
+    }
+  });
+
+  // Verify offline payment using code
+  app.post("/api/verify-payment", async (req, res) => {
+    try {
+      const { paymentCode, transactionId } = req.body;
+      
+      if (!paymentCode || !transactionId) {
+        return res.status(400).json({ message: "Missing payment code or transaction ID" });
+      }
+
+      // Find transaction by payment code and ID
+      const transactions = await storage.getUserTransactions(transactionId);
+      const transaction = transactions.find(t => 
+        t.paymentCode === paymentCode && 
+        t.id === transactionId && 
+        t.status === 'pending'
+      );
+
+      if (!transaction) {
+        return res.status(404).json({ message: "Invalid payment code or transaction not found" });
+      }
+
+      // Update transaction status to completed
+      await storage.updateTransactionStatus(transaction.id, 'completed');
+      
+      // Update user balance
+      const user = await storage.getUser(transaction.userId);
+      if (user) {
+        const newBalance = (parseFloat(user.balance) + parseFloat(transaction.amount)).toString();
+        await storage.updateUserBalance(transaction.userId, newBalance);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Payment verified and balance updated",
+        newBalance: user ? (parseFloat(user.balance) + parseFloat(transaction.amount)).toString() : "0"
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error verifying payment: " + error.message });
     }
   });
 

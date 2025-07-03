@@ -1,18 +1,81 @@
-import { useState, useEffect } from 'react';
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy, CheckCircle } from 'lucide-react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
 
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+interface PaymentCodeDisplayProps {
+  paymentCode: string;
+  amount: number;
+  transactionId: number;
+  onCancel: () => void;
+  onSuccess: () => void;
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+const PaymentCodeDisplay = ({ paymentCode, amount, transactionId, onCancel, onSuccess }: PaymentCodeDisplayProps) => {
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(paymentCode);
+    setCopied(true);
+    toast({
+      title: "Copied!",
+      description: "Payment code copied to clipboard",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Card className="max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="text-center text-green-600">Payment Code Generated</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-center">
+          <p className="text-lg font-semibold mb-2">Amount: {amount} ETB</p>
+          <p className="text-sm text-gray-600 mb-4">
+            Please make your payment offline and use this 6-digit code as reference:
+          </p>
+          
+          <div className="flex items-center justify-center space-x-2 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <span className="text-3xl font-bold text-blue-600 tracking-wider">{paymentCode}</span>
+            <Button 
+              onClick={copyToClipboard}
+              variant="outline" 
+              size="sm"
+              className="ml-2"
+            >
+              {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-semibold text-blue-800 mb-2">Payment Instructions:</h4>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• Contact our payment agent</li>
+            <li>• Provide the 6-digit code: <strong>{paymentCode}</strong></li>
+            <li>• Make payment of <strong>{amount} ETB</strong></li>
+            <li>• Your balance will be updated once verified</li>
+          </ul>
+        </div>
+
+        <div className="flex space-x-2">
+          <Button onClick={onCancel} variant="outline" className="flex-1">
+            Cancel
+          </Button>
+          <Button onClick={onSuccess} className="flex-1">
+            Done
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 interface DepositFormProps {
   user: any;
@@ -22,45 +85,31 @@ interface DepositFormProps {
 }
 
 const DepositForm = ({ user, amount, onSuccess, onCancel }: DepositFormProps) => {
-  const stripe = useStripe();
-  const elements = useElements();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!stripe || !elements) {
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/lobby`,
-        },
+      const response = await apiRequest("POST", "/api/create-payment-code", {
+        amount,
+        userId: user.id
       });
-
-      if (error) {
-        toast({
-          title: "Payment Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Payment Successful",
-          description: `$${amount.toFixed(2)} has been added to your wallet!`,
-        });
-        onSuccess();
-      }
+      
+      const data = await response.json();
+      setPaymentData(data);
+      
+      toast({
+        title: "Payment Code Generated",
+        description: "Please follow the instructions to complete your payment",
+      });
     } catch (error: any) {
       toast({
-        title: "Payment Error",
-        description: error.message,
+        title: "Error",
+        description: "Failed to generate payment code",
         variant: "destructive",
       });
     } finally {
@@ -68,77 +117,42 @@ const DepositForm = ({ user, amount, onSuccess, onCancel }: DepositFormProps) =>
     }
   };
 
+  if (paymentData) {
+    return (
+      <PaymentCodeDisplay
+        paymentCode={paymentData.paymentCode}
+        amount={amount}
+        transactionId={paymentData.transactionId}
+        onCancel={onCancel}
+        onSuccess={onSuccess}
+      />
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="bg-blue-50 rounded-lg p-4 mb-4">
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600">Deposit Amount</span>
-          <span className="text-lg font-bold text-blue-600">${amount.toFixed(2)}</span>
+          <span className="text-lg font-bold text-blue-600">{amount} ETB</span>
         </div>
       </div>
-      
-      <PaymentElement />
-      
+
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h4 className="font-semibold text-yellow-800 mb-2">Offline Payment Process</h4>
+        <p className="text-sm text-yellow-700">
+          We will generate a unique 6-digit payment code. Use this code when making your offline payment 
+          to ensure your account is credited correctly.
+        </p>
+      </div>
+
       <div className="flex space-x-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          className="flex-1"
-          disabled={isLoading}
-        >
+        <Button type="button" onClick={onCancel} variant="outline" className="flex-1">
+          <ArrowLeft className="mr-2 w-4 h-4" />
           Cancel
         </Button>
-        <Button
-          type="submit"
-          disabled={!stripe || isLoading}
-          className="flex-1 bg-blue-500 hover:bg-blue-600"
-        >
-          {isLoading ? (
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-              <span>Processing...</span>
-            </div>
-          ) : (
-            `Pay $${amount.toFixed(2)}`
-          )}
-        </Button>
-      </div>
-      
-      {/* Test mode payment completion for demo */}
-      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-700 mb-2">Demo Mode: For testing, click below to simulate successful payment:</p>
-        <Button
-          type="button"
-          onClick={async () => {
-            try {
-              const response = await apiRequest('POST', '/api/complete-test-payment', {
-                userId: user.id,
-                amount
-              });
-              
-              const data = await response.json();
-              
-              if (data.success) {
-                toast({
-                  title: "Payment Successful",
-                  description: `$${amount.toFixed(2)} added to your wallet!`,
-                });
-                onSuccess();
-              }
-            } catch (error) {
-              toast({
-                title: "Error",
-                description: "Failed to complete test payment",
-                variant: "destructive",
-              });
-            }
-          }}
-          variant="outline"
-          className="w-full bg-yellow-100 hover:bg-yellow-200 text-yellow-800"
-          disabled={isLoading}
-        >
-          Complete Test Payment
+        <Button type="submit" disabled={isLoading} className="flex-1">
+          {isLoading ? "Generating..." : "Generate Payment Code"}
         </Button>
       </div>
     </form>
@@ -151,97 +165,41 @@ interface DepositProps {
 
 export default function Deposit({ user }: DepositProps) {
   const [, navigate] = useLocation();
-  const [clientSecret, setClientSecret] = useState("");
-  const [amount, setAmount] = useState<number>(25);
-  const [customAmount, setCustomAmount] = useState<string>('');
-  const [showPayment, setShowPayment] = useState(false);
-  const { toast } = useToast();
+  const [amount, setAmount] = useState(100);
+  const [showForm, setShowForm] = useState(false);
 
-  const predefinedAmounts = [10, 25, 50, 100];
+  const predefinedAmounts = [50, 100, 250, 500, 1000];
 
   const handleAmountSelect = (selectedAmount: number) => {
     setAmount(selectedAmount);
-    setCustomAmount('');
   };
 
-  const handleCustomAmount = (value: string) => {
-    setCustomAmount(value);
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue > 0) {
-      setAmount(numValue);
-    }
+  const handleCustomAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value) || 0;
+    setAmount(value);
   };
 
-  const handleProceedToPayment = async () => {
-    if (amount < 1) {
-      toast({
-        title: "Invalid Amount",
-        description: "Minimum deposit amount is $1.00",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await apiRequest("POST", "/api/create-payment-intent", {
-        amount,
-        userId: user.id
-      });
-      const data = await response.json();
-      setClientSecret(data.clientSecret);
-      setShowPayment(true);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create payment",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handlePaymentSuccess = () => {
+  const handleSuccess = () => {
     navigate('/lobby');
   };
 
   const handleCancel = () => {
-    if (showPayment) {
-      setShowPayment(false);
-      setClientSecret('');
+    if (showForm) {
+      setShowForm(false);
     } else {
       navigate('/lobby');
     }
   };
 
-  if (showPayment && clientSecret) {
+  if (showForm) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md mx-auto">
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={handleCancel}
-              className="mb-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-900">Complete Payment</h1>
-            <p className="text-gray-600">Add funds to your Bingo wallet</p>
-          </div>
-
-          <Card>
-            <CardContent className="p-6">
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <DepositForm 
-                  user={user}
-                  amount={amount}
-                  onSuccess={handlePaymentSuccess}
-                  onCancel={handleCancel}
-                />
-              </Elements>
-            </CardContent>
-          </Card>
-        </div>
+        <DepositForm
+          user={user}
+          amount={amount}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
       </div>
     );
   }
@@ -249,86 +207,63 @@ export default function Deposit({ user }: DepositProps) {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-md mx-auto">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/lobby')}
-            className="mb-4"
+        <div className="flex items-center mb-6">
+          <Button 
+            onClick={() => navigate('/lobby')} 
+            variant="ghost" 
+            className="mr-4"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Lobby
+            <ArrowLeft className="w-4 h-4" />
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Add Funds</h1>
-          <p className="text-gray-600">Choose an amount to deposit</p>
+          <h1 className="text-xl font-bold">Add Funds</h1>
         </div>
 
-        {/* Current Balance */}
-        <Card className="mb-6 bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="p-4">
-            <p className="text-sm opacity-90">Current Balance</p>
-            <p className="text-2xl font-bold">${parseFloat(user?.balance || '0').toFixed(2)}</p>
-          </CardContent>
-        </Card>
-
         <Card>
-          <CardContent className="p-6">
-            <div className="space-y-6">
-              {/* Predefined Amounts */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">Quick Select</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {predefinedAmounts.map(amt => (
-                    <Button
-                      key={amt}
-                      variant={amount === amt && !customAmount ? "default" : "outline"}
-                      onClick={() => handleAmountSelect(amt)}
-                      className="py-3"
-                    >
-                      ${amt}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+          <CardHeader>
+            <CardTitle>Select Amount (ETB)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 gap-3">
+              {predefinedAmounts.map((presetAmount) => (
+                <Button
+                  key={presetAmount}
+                  variant={amount === presetAmount ? "default" : "outline"}
+                  onClick={() => handleAmountSelect(presetAmount)}
+                  className="h-12"
+                >
+                  {presetAmount} ETB
+                </Button>
+              ))}
+            </div>
 
-              {/* Custom Amount */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">Custom Amount</h3>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={customAmount}
-                    onChange={(e) => handleCustomAmount(e.target.value)}
-                    className="pl-8"
-                    min="1"
-                    step="0.01"
-                  />
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Or enter custom amount
+              </label>
+              <Input
+                type="number"
+                placeholder="Enter amount in ETB"
+                value={amount || ''}
+                onChange={handleCustomAmount}
+                min="10"
+                max="10000"
+              />
+            </div>
 
-              {/* Selected Amount Display */}
-              <div className="bg-blue-50 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Selected Amount</span>
-                  <span className="text-lg font-bold text-blue-600">${amount.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Proceed Button */}
-              <Button
-                onClick={handleProceedToPayment}
-                disabled={amount < 1}
-                className="w-full bg-blue-500 hover:bg-blue-600 py-3"
-              >
-                Proceed to Payment
-              </Button>
-
-              <div className="text-xs text-gray-500 text-center">
-                <p>Secure payment powered by Stripe</p>
-                <p>Funds will be available immediately after successful payment</p>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">You will deposit:</span>
+                <span className="text-lg font-bold text-blue-600">{amount} ETB</span>
               </div>
             </div>
+
+            <Button
+              onClick={() => setShowForm(true)}
+              className="w-full"
+              disabled={amount < 10}
+            >
+              Continue to Payment
+            </Button>
           </CardContent>
         </Card>
       </div>

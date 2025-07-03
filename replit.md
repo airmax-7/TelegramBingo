@@ -1,0 +1,109 @@
+# Telegram Bingo - Multi-Player Game
+
+## Overview
+
+This is a full-stack multiplayer Bingo application designed to work within the Telegram Web App ecosystem. The application allows users to create and join Bingo games, manage virtual wallets, and play real-time multiplayer Bingo with Telegram friends.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite with custom configuration for client-side development
+- **Routing**: Wouter for lightweight client-side routing
+- **UI Framework**: Shadcn/ui components built on Radix UI primitives
+- **Styling**: Tailwind CSS with custom design tokens for Telegram-specific theming
+- **State Management**: TanStack React Query for server state management
+- **Payment Integration**: Stripe for handling deposits and transactions
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules
+- **Database ORM**: Drizzle ORM for type-safe database operations
+- **Database**: PostgreSQL (configured for Neon serverless)
+- **Real-time Communication**: WebSocket (ws library) for live game updates
+- **Payment Processing**: Stripe API for secure payment handling
+
+### Database Schema
+The application uses PostgreSQL with the following main entities:
+- **Users**: Stores Telegram user data, verification status, and wallet balance
+- **Games**: Manages game state, prize pools, and game configuration
+- **Game Participants**: Links users to games with their Bingo cards and progress
+- **Transactions**: Tracks all financial operations (deposits, game entries, winnings)
+
+## Key Components
+
+### Authentication & User Management
+- Telegram Web App SDK integration for seamless user authentication
+- Phone number verification through Telegram's secure system
+- Demo mode support for development and testing outside Telegram
+
+### Game Engine
+- Custom Bingo card generation with proper number distribution (B:1-15, I:16-30, N:31-45, G:46-60, O:61-75)
+- Real-time number calling system with WebSocket broadcasting
+- Win condition checking for standard Bingo patterns
+- Support for multiple game types (standard, speed, jackpot)
+
+### Wallet System
+- Virtual wallet with decimal precision for financial operations
+- Secure Stripe integration for deposits
+- Transaction history tracking with status management
+- Entry fee collection and prize distribution
+
+### Real-time Features
+- WebSocket-based game rooms for live gameplay
+- Real-time player updates and game state synchronization
+- Live number calling with interval-based automation
+
+## Data Flow
+
+1. **User Authentication**: Users authenticate via Telegram Web App SDK
+2. **Wallet Management**: Users can deposit funds using Stripe payment integration
+3. **Game Creation**: Users create games with configurable entry fees and player limits
+4. **Game Joining**: Players join games, automatically generating unique Bingo cards
+5. **Game Execution**: Real-time number calling with WebSocket updates to all participants
+6. **Win Detection**: Client-side and server-side validation of winning conditions
+7. **Prize Distribution**: Automatic wallet updates for winners
+
+## External Dependencies
+
+### Core Technologies
+- **Database**: Neon PostgreSQL serverless database
+- **Payment Processing**: Stripe API for secure financial transactions
+- **Real-time Communication**: Native WebSocket implementation
+- **UI Components**: Radix UI primitives with custom Telegram theming
+
+### Development Tools
+- **TypeScript**: Full type safety across frontend and backend
+- **Drizzle Kit**: Database migrations and schema management
+- **Vite**: Development server with hot reload and build optimization
+- **ESBuild**: Production build optimization for server-side code
+
+## Deployment Strategy
+
+### Development Environment
+- Vite development server for frontend with hot module replacement
+- tsx for TypeScript execution in development
+- Automatic database schema pushing via Drizzle Kit
+
+### Production Build
+- Frontend: Vite builds optimized static assets
+- Backend: ESBuild creates optimized Node.js bundle
+- Single deployment artifact with embedded static file serving
+
+### Environment Configuration
+- Database connection via `DATABASE_URL` environment variable
+- Stripe integration requires both public and secret keys
+- Telegram Web App integration for production deployment
+
+## Changelog
+
+```
+Changelog:
+- July 03, 2025. Initial setup
+```
+
+## User Preferences
+
+```
+Preferred communication style: Simple, everyday language.
+```

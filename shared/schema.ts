@@ -45,7 +45,7 @@ export const transactions = pgTable("transactions", {
   type: text("type").notNull(), // 'deposit', 'withdrawal', 'game_entry', 'game_win'
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
-  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  paymentCode: text("payment_code"), // 6-digit code for offline payments
   gameId: integer("game_id").references(() => games.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

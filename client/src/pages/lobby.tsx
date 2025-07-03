@@ -157,7 +157,7 @@ export default function Lobby({ user }: LobbyProps) {
               <div className="flex items-center space-x-2">
                 <div>
                   <p className="text-sm opacity-90">Your Balance</p>
-                  <p className="text-xl font-bold">${parseFloat(userData?.user?.balance || user?.balance || '0').toFixed(2)}</p>
+                  <p className="text-xl font-bold">{parseFloat(userData?.user?.balance || user?.balance || '0').toFixed(2)} ETB</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -197,7 +197,7 @@ export default function Lobby({ user }: LobbyProps) {
                     <div className="text-right">
                       <div className="flex items-center space-x-1 text-orange-500">
                         <Trophy className="h-4 w-4" />
-                        <span className="font-bold">${parseFloat(game.prizePool).toFixed(2)}</span>
+                        <span className="font-bold">{parseFloat(game.prizePool).toFixed(2)} ETB</span>
                       </div>
                     </div>
                   </div>
@@ -210,7 +210,7 @@ export default function Lobby({ user }: LobbyProps) {
                       </span>
                     </div>
                     <span className="text-sm text-gray-600">
-                      Entry: ${parseFloat(game.entryFee).toFixed(2)}
+                      Entry: {parseFloat(game.entryFee).toFixed(2)} ETB
                     </span>
                   </div>
 

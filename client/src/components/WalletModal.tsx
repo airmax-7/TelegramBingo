@@ -82,15 +82,15 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
           <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white mb-4">
             <CardContent className="p-4">
               <p className="text-sm opacity-90">Current Balance</p>
-              <p className="text-2xl font-bold">${parseFloat(user?.balance || '0').toFixed(2)}</p>
+              <p className="text-2xl font-bold">{parseFloat(user?.balance || '0').toFixed(2)} ETB</p>
               <div className="flex items-center space-x-4 mt-3">
                 <div className="text-center">
                   <p className="text-xs opacity-90">Total Deposited</p>
-                  <p className="font-bold">$0.00</p>
+                  <p className="font-bold">0.00 ETB</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs opacity-90">Total Won</p>
-                  <p className="font-bold">$0.00</p>
+                  <p className="font-bold">0.00 ETB</p>
                 </div>
               </div>
             </CardContent>
@@ -113,7 +113,7 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
               </Button>
             </div>
             <div className="flex space-x-2 mt-2">
-              {[10, 25, 50, 100].map(amount => (
+              {[50, 100, 250, 500].map(amount => (
                 <Button
                   key={amount}
                   variant="outline"
@@ -121,7 +121,7 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
                   onClick={() => setDepositAmount(amount.toString())}
                   className="flex-1"
                 >
-                  ${amount}
+                  {amount} ETB
                 </Button>
               ))}
             </div>

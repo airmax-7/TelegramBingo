@@ -16,7 +16,7 @@ interface CreateGameModalProps {
 
 export default function CreateGameModal({ user }: CreateGameModalProps) {
   const [open, setOpen] = useState(false);
-  const [entryFee, setEntryFee] = useState('2.50');
+  const [entryFee, setEntryFee] = useState('50');
   const [maxPlayers, setMaxPlayers] = useState('8');
   const [gameType, setGameType] = useState('standard');
   const { toast } = useToast();
@@ -106,18 +106,18 @@ export default function CreateGameModal({ user }: CreateGameModalProps) {
 
           {/* Entry Fee */}
           <div className="space-y-2">
-            <Label htmlFor="entryFee">Entry Fee ($)</Label>
+            <Label htmlFor="entryFee">Entry Fee (ETB)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm font-medium">ETB</span>
               <Input
                 id="entryFee"
                 type="number"
-                step="0.25"
-                min="0.25"
-                max="25.00"
+                step="10"
+                min="10"
+                max="1000"
                 value={entryFee}
                 onChange={(e) => setEntryFee(e.target.value)}
-                className="pl-10"
+                className="pl-12"
                 placeholder="2.50"
               />
             </div>
