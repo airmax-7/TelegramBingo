@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Search, DollarSign, Clock, User } from 'lucide-react';
+import { CheckCircle, XCircle, Search, DollarSign, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -17,6 +17,8 @@ export default function Admin({ user }: AdminProps) {
   const [paymentCode, setPaymentCode] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [currentUser, setCurrentUser] = useState(user);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -65,6 +67,31 @@ export default function Admin({ user }: AdminProps) {
     },
   });
 
+  // Quick verify from list mutation
+  const quickVerifyMutation = useMutation({
+    mutationFn: async ({ code, txId }: { code: string; txId: number }) => {
+      const response = await apiRequest('POST', '/api/admin/verify-payment', {
+        paymentCode: code,
+        transactionId: txId
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment Verified",
+        description: "Payment verified successfully from list.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-transactions'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Failed to verify payment",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleVerifyPayment = () => {
     if (!paymentCode || !transactionId) {
       toast({
@@ -85,6 +112,34 @@ export default function Admin({ user }: AdminProps) {
     }
 
     verifyPaymentMutation.mutate({ code: paymentCode, txId: transactionId });
+  };
+
+  const handleQuickVerify = (transaction: any) => {
+    quickVerifyMutation.mutate({ 
+      code: transaction.paymentCode, 
+      txId: transaction.id 
+    });
+  };
+
+  // Pagination helpers
+  const getPaginatedTransactions = () => {
+    if (!pendingTransactions?.transactions) return [];
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return pendingTransactions.transactions.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    if (!pendingTransactions?.transactions) return 0;
+    return Math.ceil(pendingTransactions.transactions.length / itemsPerPage);
+  };
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(getTotalPages(), prev + 1));
   };
 
   const handleBecomeAdmin = () => {
@@ -203,44 +258,116 @@ export default function Admin({ user }: AdminProps) {
                 <p className="text-gray-500">Loading pending transactions...</p>
               </div>
             ) : pendingTransactions?.transactions?.length > 0 ? (
-              <div className="space-y-4">
-                {pendingTransactions.transactions.map((transaction: any) => (
-                  <div key={transaction.id} className="border rounded-lg p-4 bg-white">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                      <div>
-                        <p className="text-sm text-gray-500">Transaction ID</p>
-                        <p className="font-mono font-bold">{transaction.id}</p>
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, pendingTransactions.transactions.length)} of {pendingTransactions.transactions.length} transactions
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {getTotalPages()}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNextPage}
+                      disabled={currentPage === getTotalPages()}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {getPaginatedTransactions().map((transaction: any) => (
+                    <div key={transaction.id} className="border rounded-lg p-4 bg-white">
+                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                        <div>
+                          <p className="text-sm text-gray-500">Transaction ID</p>
+                          <p className="font-mono font-bold">{transaction.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Payment Code</p>
+                          <p className="font-mono font-bold text-blue-600">{transaction.paymentCode}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Amount</p>
+                          <p className="font-bold text-green-600">{parseFloat(transaction.amount).toFixed(2)} ETB</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Status</p>
+                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            {transaction.status}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => handleQuickVerify(transaction)}
+                            disabled={quickVerifyMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {quickVerifyMutation.isPending ? (
+                              <Clock className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Verify
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Payment Code</p>
-                        <p className="font-mono font-bold text-blue-600">{transaction.paymentCode}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Amount</p>
-                        <p className="font-bold text-green-600">{parseFloat(transaction.amount).toFixed(2)} ETB</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Status</p>
-                        <Badge variant="outline" className="text-orange-600 border-orange-600">
-                          {transaction.status}
-                        </Badge>
+                      <div className="mt-3 pt-3 border-t">
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <User className="h-4 w-4" />
+                            User ID: {transaction.userId}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            {new Date(transaction.createdAt).toLocaleString()}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4" />
-                          User ID: {transaction.userId}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {new Date(transaction.createdAt).toLocaleString()}
-                        </div>
-                      </div>
+                  ))}
+                </div>
+                
+                {getTotalPages() > 1 && (
+                  <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handlePrevPage}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <span className="text-sm text-gray-600 px-4">
+                        Page {currentPage} of {getTotalPages()}
+                      </span>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleNextPage}
+                        disabled={currentPage === getTotalPages()}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-8">
                 <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-2" />
