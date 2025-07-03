@@ -57,6 +57,8 @@ export default function Admin({ user }: AdminProps) {
       setPaymentCode('');
       setTransactionId('');
       queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-transactions'] });
+      // Also invalidate user transactions to update Recent Transactions list
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     },
     onError: (error: any) => {
       toast({
@@ -82,6 +84,8 @@ export default function Admin({ user }: AdminProps) {
         description: "Payment verified successfully from list.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-transactions'] });
+      // Also invalidate user transactions to update Recent Transactions list
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     },
     onError: (error: any) => {
       toast({
