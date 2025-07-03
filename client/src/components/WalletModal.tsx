@@ -50,13 +50,43 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
   };
 
   const formatTransactionAmount = (type: string, amount: string) => {
-    const formattedAmount = `$${Math.abs(parseFloat(amount)).toFixed(2)}`;
+    const formattedAmount = `${Math.abs(parseFloat(amount)).toFixed(2)} ETB`;
     return type === 'game_entry' ? `-${formattedAmount}` : `+${formattedAmount}`;
   };
 
   const getTransactionColor = (type: string) => {
-    return type === 'game_entry' ? 'text-gray-600' : 'text-green-500';
+    switch (type) {
+      case 'game_win':
+        return 'text-green-600';
+      case 'deposit':
+        return 'text-blue-600';
+      case 'game_entry':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
   };
+
+  // Calculate totals from transactions
+  const calculateTotals = () => {
+    if (!transactions?.transactions) {
+      return { totalDeposited: 0, totalWon: 0 };
+    }
+
+    const completedTransactions = transactions.transactions.filter((t: any) => t.status === 'completed');
+    
+    const totalDeposited = completedTransactions
+      .filter((t: any) => t.type === 'deposit')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+    
+    const totalWon = completedTransactions
+      .filter((t: any) => t.type === 'game_win')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+
+    return { totalDeposited, totalWon };
+  };
+
+  const { totalDeposited, totalWon } = calculateTotals();
 
   if (!isOpen) return null;
 
@@ -86,11 +116,11 @@ export default function WalletModal({ isOpen, onClose, user, onDeposit }: Wallet
               <div className="flex items-center space-x-4 mt-3">
                 <div className="text-center">
                   <p className="text-xs opacity-90">Total Deposited</p>
-                  <p className="font-bold">0.00 ETB</p>
+                  <p className="font-bold">{totalDeposited.toFixed(2)} ETB</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs opacity-90">Total Won</p>
-                  <p className="font-bold">0.00 ETB</p>
+                  <p className="font-bold">{totalWon.toFixed(2)} ETB</p>
                 </div>
               </div>
             </CardContent>
