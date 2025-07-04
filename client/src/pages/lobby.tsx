@@ -20,9 +20,14 @@ export default function Lobby({ user }: LobbyProps) {
   const queryClient = useQueryClient();
 
   const { data: gamesData, isLoading } = useQuery({
-    queryKey: ['/api/games', { userId: user?.id }],
+    queryKey: ['/api/games', user?.id],
     enabled: !!user?.id,
     refetchInterval: 3000, // Refresh every 3 seconds
+    queryFn: async () => {
+      const response = await fetch(`/api/games?userId=${user.id}`);
+      if (!response.ok) throw new Error('Failed to fetch games');
+      return response.json();
+    },
   });
 
   const { data: userData, refetch: refetchUser } = useQuery({
