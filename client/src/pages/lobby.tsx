@@ -35,6 +35,16 @@ export default function Lobby({ user }: LobbyProps) {
     },
   });
 
+  const { data: transactions } = useQuery({
+    queryKey: ['/api/transactions', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/user/${user.id}/transactions`);
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      return response.json();
+    },
+  });
+
   const createGameMutation = useMutation({
     mutationFn: async (gameData: any) => {
       const response = await apiRequest('POST', '/api/games', gameData);
@@ -116,6 +126,27 @@ export default function Lobby({ user }: LobbyProps) {
     addTestPlayerMutation.mutate(gameId);
   };
 
+  // Calculate totals from transactions
+  const calculateTotals = () => {
+    if (!transactions?.transactions) {
+      return { totalDeposited: 0, totalWon: 0 };
+    }
+
+    const completedTransactions = transactions.transactions.filter((t: any) => t.status === 'completed');
+    
+    const totalDeposited = completedTransactions
+      .filter((t: any) => t.type === 'deposit')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+    
+    const totalWon = completedTransactions
+      .filter((t: any) => t.type === 'game_win')
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+
+    return { totalDeposited, totalWon };
+  };
+
+  const { totalDeposited, totalWon } = calculateTotals();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'waiting':
@@ -154,7 +185,7 @@ export default function Lobby({ user }: LobbyProps) {
         {/* Balance Card */}
         <Card className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
                 <div>
                   <p className="text-sm opacity-90">Your Balance</p>
@@ -172,6 +203,16 @@ export default function Lobby({ user }: LobbyProps) {
               <div className="text-right">
                 <p className="text-sm opacity-90">Available Games</p>
                 <p className="font-bold">{gamesData?.games?.length || 0}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-6 pt-3 border-t border-white/20">
+              <div className="text-center">
+                <p className="text-xs opacity-90">Total Deposited</p>
+                <p className="font-bold">{totalDeposited.toFixed(2)} ETB</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs opacity-90">Total Won</p>
+                <p className="font-bold">{totalWon.toFixed(2)} ETB</p>
               </div>
             </div>
           </CardContent>
