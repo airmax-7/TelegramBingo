@@ -171,7 +171,7 @@ export default function Game({ user }: GameProps) {
           <div className="flex items-center space-x-2">
             <div className="bg-green-100 px-3 py-1 rounded-full">
               <span className="text-green-600 font-bold text-sm">
-                ${parseFloat(user?.balance || '0').toFixed(2)}
+                {parseFloat(user?.balance || '0').toFixed(2)} ETB
               </span>
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function Game({ user }: GameProps) {
               <div className="flex items-center space-x-1">
                 <Trophy className="h-4 w-4 text-orange-300" />
                 <span className="font-bold text-orange-300">
-                  ${parseFloat(gameData.game.prizePool).toFixed(2)}
+                  {parseFloat(gameData.game.prizePool).toFixed(2)} ETB
                 </span>
               </div>
             </div>
@@ -318,7 +318,7 @@ export default function Game({ user }: GameProps) {
               <div className="bg-green-100 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-600">Prize Amount</p>
                 <p className="text-2xl font-bold text-green-500">
-                  ${parseFloat(winAmount).toFixed(2)}
+                  {parseFloat(winAmount).toFixed(2)} ETB
                 </p>
               </div>
               
