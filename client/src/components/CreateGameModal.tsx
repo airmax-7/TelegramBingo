@@ -121,7 +121,7 @@ export default function CreateGameModal({ user }: CreateGameModalProps) {
                 placeholder="2.50"
               />
             </div>
-            <p className="text-xs text-gray-500">Minimum $0.25, Maximum $25.00</p>
+            <p className="text-xs text-gray-500">Minimum 10 ETB, Maximum 1000 ETB</p>
           </div>
 
           {/* Max Players */}
@@ -151,7 +151,7 @@ export default function CreateGameModal({ user }: CreateGameModalProps) {
                 <div className="text-sm">
                   <span className="font-medium text-yellow-800">Estimated Prize:</span>
                   <span className="ml-1 text-yellow-700">
-                    ${(parseFloat(entryFee || '0') * parseInt(maxPlayers || '0') * 0.9).toFixed(2)}
+                    {(parseFloat(entryFee || '0') * parseInt(maxPlayers || '0') * 0.9).toFixed(2)} ETB
                   </span>
                   <span className="text-xs text-yellow-600 ml-1">(90% of total entry fees)</span>
                 </div>
