@@ -20,7 +20,8 @@ export default function Lobby({ user }: LobbyProps) {
   const queryClient = useQueryClient();
 
   const { data: gamesData, isLoading } = useQuery({
-    queryKey: ['/api/games'],
+    queryKey: ['/api/games', { userId: user?.id }],
+    enabled: !!user?.id,
     refetchInterval: 3000, // Refresh every 3 seconds
   });
 
@@ -216,21 +217,28 @@ export default function Lobby({ user }: LobbyProps) {
 
                   <Button
                     onClick={() => {
-                      if (game.status === 'active') {
+                      if (game.status === 'active' && game.userJoined) {
                         navigate(`/game/${game.id}`);
-                      } else {
+                      } else if (game.status === 'waiting') {
                         handleJoinGame(game.id);
                       }
                     }}
                     disabled={
                       joiningGameId === game.id ||
+                      (game.status === 'active' && !game.userJoined) ||
                       (game.status === 'waiting' && (
                         (game.participantCount >= game.maxPlayers) ||
                         parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee)
                       ))
                     }
                     className="w-full"
-                    variant={game.status === 'waiting' ? 'default' : 'default'}
+                    variant={
+                      game.status === 'active' && !game.userJoined 
+                        ? 'outline' 
+                        : game.status === 'waiting' 
+                          ? 'default' 
+                          : 'default'
+                    }
                   >
                     {joiningGameId === game.id ? (
                       'Joining...'
@@ -239,19 +247,27 @@ export default function Lobby({ user }: LobbyProps) {
                         <Play className="mr-2 h-4 w-4" />
                         Join Game
                       </>
-                    ) : game.status === 'active' ? (
+                    ) : game.status === 'active' && game.userJoined ? (
                       <>
                         <Play className="mr-2 h-4 w-4" />
                         Enter Game
                       </>
+                    ) : game.status === 'active' && !game.userJoined ? (
+                      'Game In Progress'
                     ) : (
                       'Game Completed'
                     )}
                   </Button>
 
-                  {parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee) && (
+                  {parseFloat(userData?.user?.balance || user?.balance || '0') < parseFloat(game.entryFee) && game.status === 'waiting' && (
                     <p className="text-xs text-red-500 mt-2 text-center">
                       Insufficient balance
+                    </p>
+                  )}
+                  
+                  {game.status === 'active' && !game.userJoined && (
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      You haven't joined this game
                     </p>
                   )}
                   

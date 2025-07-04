@@ -212,18 +212,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get active games
+  // Get active games with user participation info
   app.get("/api/games", async (req, res) => {
     try {
+      const { userId } = req.query;
       const games = await storage.getActiveGames();
       
-      // Get participant count for each game
+      // Get participant count and user participation for each game
       const gamesWithCounts = await Promise.all(
         games.map(async (game) => {
           const participants = await storage.getGameParticipants(game.id);
+          const userParticipant = userId ? participants.find(p => p.userId === parseInt(userId as string)) : null;
+          
           return {
             ...game,
-            participantCount: participants.length
+            participantCount: participants.length,
+            userJoined: !!userParticipant
           };
         })
       );
