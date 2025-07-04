@@ -13,6 +13,8 @@ export const users = pgTable("users", {
   balance: decimal("balance", { precision: 10, scale: 2 }).default("0.00").notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
   isAdmin: boolean("is_admin").default(false).notNull(),
+  adminUsername: text("admin_username"),
+  adminPassword: text("admin_password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -14,30 +14,62 @@ interface AdminProps {
 }
 
 export default function Admin({ user }: AdminProps) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentAdmin, setCurrentAdmin] = useState<any>(null);
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [paymentCode, setPaymentCode] = useState('');
   const [transactionId, setTransactionId] = useState('');
-  const [currentUser, setCurrentUser] = useState(user);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch current user data to get admin status
+  // Check if user is already an admin
   const { data: userData } = useQuery({
     queryKey: ['/api/user/' + user?.id],
     enabled: !!user?.id,
   });
 
   useEffect(() => {
-    if (userData?.user) {
-      setCurrentUser(userData.user);
+    if (userData?.user?.isAdmin) {
+      setIsLoggedIn(true);
+      setCurrentAdmin(userData.user);
     }
   }, [userData]);
+
+  // Admin login mutation
+  const loginMutation = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const response = await apiRequest('POST', '/api/admin/login', {
+        username,
+        password
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIsLoggedIn(true);
+      setCurrentAdmin(data.adminUser);
+      setLoginUsername('');
+      setLoginPassword('');
+      toast({
+        title: "Login Successful",
+        description: "Welcome to the admin panel!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Fetch pending transactions
   const { data: pendingTransactions, isLoading } = useQuery({
     queryKey: ['/api/admin/pending-transactions'],
-    enabled: currentUser?.isAdmin === true,
+    enabled: isLoggedIn,
   });
 
   // Verify payment mutation
@@ -146,6 +178,27 @@ export default function Admin({ user }: AdminProps) {
     setCurrentPage(prev => Math.min(getTotalPages(), prev + 1));
   };
 
+  const handleLogin = () => {
+    if (!loginUsername || !loginPassword) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both username and password",
+        variant: "destructive",
+      });
+      return;
+    }
+    loginMutation.mutate({ username: loginUsername, password: loginPassword });
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentAdmin(null);
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out of the admin panel.",
+    });
+  };
+
   const handleBecomeAdmin = () => {
     // For testing purposes - switch to admin user
     const adminUser = {
@@ -160,26 +213,63 @@ export default function Admin({ user }: AdminProps) {
     window.location.reload();
   };
 
-  if (currentUser?.isAdmin !== true) {
+  if (!isLoggedIn) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Card className="w-full max-w-md">
-          <CardContent className="p-6 text-center">
-            <XCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Access Denied</h2>
-            <p className="text-gray-600">You don't have admin privileges to access this page.</p>
-            <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-left">
-              <p><strong>Debug Info:</strong></p>
-              <p>User ID: {user?.id}</p>
-              <p>Current isAdmin: {String(currentUser?.isAdmin)}</p>
-              <p>User data loaded: {userData ? 'Yes' : 'No'}</p>
+          <CardHeader>
+            <CardTitle className="text-center">Admin Login</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Enter admin username"
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter admin password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+              />
             </div>
             <Button 
-              onClick={handleBecomeAdmin} 
-              className="mt-4 bg-blue-600 hover:bg-blue-700"
+              onClick={handleLogin}
+              disabled={loginMutation.isPending}
+              className="w-full"
             >
-              Switch to Admin User (Testing)
+              {loginMutation.isPending ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                'Login'
+              )}
             </Button>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm text-gray-600 text-center mb-2">Testing only:</p>
+              <Button 
+                onClick={handleBecomeAdmin} 
+                variant="outline"
+                className="w-full"
+              >
+                Use Demo Admin (ID: 18)
+              </Button>
+            </div>
+            
+            <div className="text-xs text-gray-500 text-center">
+              <p>Default credentials: admin / admin123</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -190,9 +280,19 @@ export default function Admin({ user }: AdminProps) {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Panel</h1>
-          <p className="text-gray-600">Verify offline payments and manage transactions</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+            <p className="text-gray-600">Welcome, {currentAdmin?.username || 'Admin'}</p>
+          </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="text-red-600 border-red-600 hover:bg-red-50"
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
 
         {/* Payment Verification Card */}

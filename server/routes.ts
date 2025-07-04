@@ -437,6 +437,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin login endpoint
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+
+      // Find admin user by username and password
+      const adminUser = await storage.getAdminByCredentials(username, password);
+      
+      if (!adminUser) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      res.json({
+        success: true,
+        message: "Login successful",
+        adminUser: {
+          id: adminUser.id,
+          username: adminUser.adminUsername,
+          isAdmin: adminUser.isAdmin
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Login error: " + error.message });
+    }
+  });
+
   app.post("/api/admin/verify-payment", async (req, res) => {
     try {
       const { paymentCode, transactionId } = req.body;

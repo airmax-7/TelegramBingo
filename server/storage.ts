@@ -37,6 +37,7 @@ export interface IStorage {
   // Admin operations
   getPendingTransactions(): Promise<Transaction[]>;
   verifyPaymentByCode(paymentCode: string, transactionId: number): Promise<Transaction>;
+  getAdminByCredentials(username: string, password: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -229,6 +230,18 @@ export class DatabaseStorage implements IStorage {
     await this.updateUserBalance(transaction.userId, transaction.amount);
 
     return updatedTransaction;
+  }
+
+  async getAdminByCredentials(username: string, password: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.adminUsername, username),
+        eq(users.adminPassword, password),
+        eq(users.isAdmin, true)
+      ));
+    return user;
   }
 }
 

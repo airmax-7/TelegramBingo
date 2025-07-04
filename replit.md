@@ -95,11 +95,25 @@ The application uses PostgreSQL with the following main entities:
 - Stripe integration requires both public and secret keys
 - Telegram Web App integration for production deployment
 
-## Admin Payment Verification
+## Admin System & Payment Verification
 
-### How Admins Verify Offline Payments
+### Admin Authentication
+The application includes a secure admin login system with proper authentication for accessing administrative functions.
 
-The application includes an admin panel for verifying offline payments made by users. Here's how the system works:
+#### Admin Login Process:
+1. Navigate to `/admin` route to access admin panel
+2. Enter admin username and password credentials
+3. System validates credentials against database
+4. Successful login grants access to admin panel
+5. Session management with logout functionality
+
+#### Admin Account Setup:
+- Database schema includes `admin_username` and `admin_password` fields
+- Admins must have both `is_admin = TRUE` and valid credentials
+- Default test credentials: username: `admin`, password: `admin123`
+- Current test admin user ID: 18
+
+### Payment Verification Workflow
 
 #### For Users:
 1. User initiates a deposit and receives a unique 6-digit payment code
@@ -107,15 +121,20 @@ The application includes an admin panel for verifying offline payments made by u
 3. User provides admin with both the payment code and transaction ID
 
 #### For Admins:
-1. Access admin panel at `/admin` (requires admin privileges)
-2. View all pending transactions with their payment codes
-3. Enter payment code and transaction ID provided by user
-4. Click "Verify Payment" to approve the transaction
-5. User's balance is automatically updated upon verification
+1. Login to admin panel at `/admin` with valid credentials
+2. View paginated list of pending transactions (10 per page)
+3. Two verification methods available:
+   - **Manual verification**: Enter payment code + transaction ID
+   - **Quick verification**: Click "Verify" button directly on transaction
+4. Successful verification updates user balance automatically
+5. Real-time transaction list updates via cache invalidation
 
-#### Admin Access:
-- Set `is_admin = TRUE` in the users table for admin accounts
-- Current admin user ID: 18 (demo_user)
+#### Admin Panel Features:
+- Secure login with username/password authentication
+- Logout functionality with session management
+- Pagination for handling large transaction volumes
+- Quick action buttons for efficient payment verification
+- Real-time transaction count and status updates
 
 ## Changelog
 
