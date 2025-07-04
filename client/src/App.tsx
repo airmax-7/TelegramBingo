@@ -11,6 +11,7 @@ import Lobby from "@/pages/lobby";
 import Game from "@/pages/game";
 import Deposit from "@/pages/deposit";
 import Admin from "@/pages/admin";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 import { Button } from "@/components/ui/button";
 import { Wallet, Users, History, User, Gamepad2 } from "lucide-react";
@@ -26,12 +27,13 @@ function Router({ user, onShowWallet }: { user: any; onShowWallet: () => void })
         <Route path="/lobby" component={() => <Lobby user={user} />} />
         <Route path="/game/:id" component={() => <Game user={user} />} />
         <Route path="/deposit" component={() => <Deposit user={user} />} />
+        <Route path="/profile" component={() => <Profile user={user} />} />
         <Route path="/admin" component={() => <Admin user={user} />} />
         <Route component={NotFound} />
       </Switch>
 
       {/* Bottom Navigation */}
-      {user && !location.startsWith('/game/') && (
+      {user && !location.startsWith('/game/') && !location.startsWith('/profile') && (
         <nav className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-200 px-4 py-2">
           <div className="flex items-center justify-around">
             <Button 
@@ -64,7 +66,10 @@ function Router({ user, onShowWallet }: { user: any; onShowWallet: () => void })
             
             <Button 
               variant="ghost" 
-              className="flex flex-col items-center space-y-1 py-2 px-3 text-gray-400 hover:text-gray-600"
+              className={`flex flex-col items-center space-y-1 py-2 px-3 ${
+                location === '/profile' ? 'text-blue-500' : 'text-gray-400'
+              }`}
+              onClick={() => window.history.pushState({}, '', '/profile')}
             >
               <User className="h-5 w-5" />
               <span className="text-xs font-medium">Profile</span>

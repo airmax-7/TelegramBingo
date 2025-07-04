@@ -145,6 +145,9 @@ Changelog:
 - July 03, 2025: Added admin panel for payment verification
 - July 03, 2025: Updated all currency displays to ETB (Ethiopian Birr)
 - July 04, 2025: Fixed game creation validation to use ETB amounts (10-1000 ETB)
+- July 04, 2025: Fixed game entry issues with userJoined property synchronization
+- July 04, 2025: Completed currency conversion - all $ displays now show ETB
+- July 04, 2025: Implemented comprehensive profile screen with statistics and achievements
 ```
 
 ## User Preferences
