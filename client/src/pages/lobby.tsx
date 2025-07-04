@@ -36,13 +36,8 @@ export default function Lobby({ user }: LobbyProps) {
   });
 
   const { data: transactions } = useQuery({
-    queryKey: ['/api/transactions', user?.id],
+    queryKey: ['/api/users/' + user?.id + '/transactions'],
     enabled: !!user?.id,
-    queryFn: async () => {
-      const response = await fetch(`/api/user/${user.id}/transactions`);
-      if (!response.ok) throw new Error('Failed to fetch transactions');
-      return response.json();
-    },
   });
 
   const createGameMutation = useMutation({
