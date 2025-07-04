@@ -48,10 +48,10 @@ export default function CreateGameModal({ user }: CreateGameModalProps) {
     const fee = parseFloat(entryFee);
     const players = parseInt(maxPlayers);
 
-    if (fee < 0.25 || fee > 25.00) {
+    if (fee < 10 || fee > 1000) {
       toast({
         title: "Invalid Entry Fee",
-        description: "Entry fee must be between $0.25 and $25.00",
+        description: "Entry fee must be between 10 ETB and 1000 ETB",
         variant: "destructive",
       });
       return;

@@ -144,6 +144,7 @@ Changelog:
 - July 03, 2025: Removed Stripe integration, implemented offline payment system
 - July 03, 2025: Added admin panel for payment verification
 - July 03, 2025: Updated all currency displays to ETB (Ethiopian Birr)
+- July 04, 2025: Fixed game creation validation to use ETB amounts (10-1000 ETB)
 ```
 
 ## User Preferences
