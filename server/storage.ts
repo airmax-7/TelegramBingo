@@ -199,7 +199,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(transactions)
       .where(eq(transactions.status, 'pending'))
-      .orderBy(transactions.createdAt);
+      .orderBy(desc(transactions.createdAt));
   }
 
   async verifyPaymentByCode(paymentCode: string, transactionId: number): Promise<Transaction> {
